@@ -2,8 +2,6 @@
 #include "csvworker.h"
 
 
-extern "C" {
-
 CsvWorker::CsvWorker(unsigned int rows_n, unsigned int cols_n)
 {
     rows = rows_n;
@@ -33,6 +31,7 @@ void CsvWorker::loadFromFile(std::string filename)
         std::getline( in, ln );
         if(ln[ln.size()-1]==10 || ln[ln.size()-1]==13)
             ln = ln.substr(0, ln.size()-1);
+        if(ln.size()==0) break;
         str = ln;
         row rw;
         int p = 0;
@@ -46,7 +45,7 @@ void CsvWorker::loadFromFile(std::string filename)
         }
         rw.push_back(str);
         if(i==0)
-        columns=rw.size();
+            columns=rw.size();
         else if(columns!=rw.size())
         {
             cout << "Wrong data format: \"" << ln << '\"' << endl;
@@ -87,8 +86,11 @@ void CsvWorker::saveToFile(std::string filename)
         for(unsigned int j=0;j<columns;++j)
         {
             out << rw[j];
-            j<c1 ? out << "," : out << endl;
+            if(j<c1)
+                out << ",";
         }
+        if(i<rows-1)
+            out << endl;
     }
     out.close();
 }
@@ -117,7 +119,5 @@ std::string & CsvWorker::getFieldRef(unsigned int row_n, unsigned int col_n)
 std::string CsvWorker::getField(unsigned int row_n, unsigned int col_n)
 {
     return getFieldRef(row_n, col_n);
-}
-
 }
 

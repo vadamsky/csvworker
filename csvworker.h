@@ -7,8 +7,6 @@
 
 using namespace std;
 
-extern "C" {
-
 typedef std::vector<std::string> row;
 
 class CsvWorker
@@ -31,7 +29,5 @@ private:
     unsigned int columns;
     std::vector<row> data;
 };
-
-}
 
 #endif // CSVWORKER_H

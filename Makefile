@@ -20,7 +20,13 @@ OBJECTS_DIR   = ./
 
 first: all
 
-all: libcsvworker.so
+all: libcsvworker.so example
+
+example: libcsvworker.so example.o
+	$(CXX) -o example example.o -L. -lcsvworker
+
+example.o: example.cpp csvworker.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o example.o example.cpp
 
 libcsvworker.so: csvworker.o
 	$(CXX) -shared -o libcsvworker.so csvworker.o
@@ -29,7 +35,7 @@ csvworker.o: csvworker.cpp csvworker.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -L/usr/lib -o csvworker.o csvworker.cpp
 
 clean:
-	rm -f *.o *.so
+	rm -f *.o *.so example
 
 install:
 	install libcsvworker.so /usr/lib
