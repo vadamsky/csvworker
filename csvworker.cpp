@@ -35,16 +35,16 @@ void CsvWorker::loadFromFile(std::string filename)
     while( !in.eof() )
     {
         std::getline( in, ln ); // read line from file in string "ln"
-        if(ln[ln.size()-1]==10 || ln[ln.size()-1]==13) // erasing endline symbols
+		if (ln.size() == 0) break; // if string is empty, believe that the file is complete
+		if(ln[ln.size()-1]==10 || ln[ln.size()-1]==13) // erasing endline symbols
             ln = ln.substr(0, ln.size()-1);
-        if(ln.size()==0) break; // if string is empty, believe that the file is complete
         str = ln;
         row rw; // create new row ( typedef std::vector<std::string> row; )
         int p = 0; // position of "," symbol in string
         while( 1 ) // parsing line
         {
             p = str.find(',');
-            if(p<=0) break;
+            if(p <= 0) break;
             temp = str.substr( 0, p );
             str = str.substr( p+1, str.size()-1-p );
             rw.push_back(temp);
@@ -137,4 +137,3 @@ std::string CsvWorker::getField(unsigned int row_n, unsigned int col_n)
 {
     return getFieldRef(row_n, col_n);
 }
-
