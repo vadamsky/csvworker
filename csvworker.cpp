@@ -1,73 +1,103 @@
 #include <iostream>
 #include "csvworker.h"
 
+
 // If counts of rows and columns !=0, this fills vector of rows "data";
 // each of rows has cols_count empty strings
-CsvWorker::CsvWorker(unsigned int rows_count, unsigned int cols_count)
+CsvWorker::CsvWorker(char delim, unsigned int rows_count, unsigned int cols_count)
 {
+	this->delimiter  = delim;
     this->rows_count = rows_count;
     this->cols_count = cols_count;
-    row rw(cols_count);
-    for(unsigned int j=0;j<cols_count;++j)
-        rw.push_back("");
-    for(unsigned int i=0;i<rows_count;++i)
-        data.push_back(rw);
+    row rw(cols_count, "");
+	data.resize(rows_count, rw);
 }
 
 // This loads .csv file and fills vector of rows "data";
 // counts of rows and columns determines from file data.
-// The delimiter is always ",".
 void CsvWorker::loadFromFile(std::string filename)
 {
-    // Try to open file
-    ifstream in(filename.c_str());
-    if( !in )
-    {
-        cout << "Can't open file \"" << filename << '\"' << endl;
-        throw;
-    }
-    // temporary strings
-    std::string ln; // in this string reads lines from file
-    std::string str; // this string uses for parsing line string
-    std::string temp; // this too
-    int i = 0; // number of row (from 0)
-    // reading and parsing file
-    while( !in.eof() )
-    {
-        std::getline( in, ln ); // read line from file in string "ln"
-		if (ln.size() == 0) break; // if string is empty, believe that the file is complete
-		if(ln[ln.size()-1]==10 || ln[ln.size()-1]==13) // erasing endline symbols
-            ln = ln.substr(0, ln.size()-1);
-        str = ln;
-        row rw; // create new row ( typedef std::vector<std::string> row; )
-        int p = 0; // position of "," symbol in string
-        while( 1 ) // parsing line
-        {
-            p = str.find(',');
-            if(p <= 0) break;
-            temp = str.substr( 0, p );
-            str = str.substr( p+1, str.size()-1-p );
-            rw.push_back(temp);
-        }
-        rw.push_back(str); // adding last row part in row
-        if(i == 0) // determine columns count from first row
-            this->cols_count = rw.size();
-        else if(this->cols_count != rw.size()) // if columns count of other row not equals
-        {                                      // columns count from first row, generate error
-            cout << "Wrong data format: \"" << ln << '\"' << endl;
-            in.close();
-            throw;
-        }
-        data.push_back(rw); // adding row part in data ( std::vector<row> data; )
-        i++;
-    }
-    this->rows_count = data.size(); // determine rows count
-    in.close(); // close file
+    // Load file data
+	std::deque<std::string> readed_data;
+	loadFile(filename, readed_data);
+	// Parse readed data
+	parseData(readed_data);
 }
+
+void CsvWorker::parseData(std::deque<std::string> &readed_data)
+{
+	char cur_field[max_field_size];
+	int cur_field_size = 0;
+	int cur_col = 0;
+	char c;
+
+	data.push_back(row());
+	row *rw = new row(rows_count);
+	for (auto str : readed_data) {
+		int sz = str.size();
+		const char * cdata = str.data();
+		for (int i = 0; i < sz; ++i) {
+			c = cdata[i];
+			if (c != delimiter && (int)c != 10 && (int)c != 13) {
+				cur_field[cur_field_size] = c;
+				cur_field_size++;
+			}
+			else { 
+				// new field
+				if (cur_field_size > 0) {
+					rw->emplace_back(cur_field, cur_field_size);
+					cur_field_size = 0;
+				}
+				// new row
+				if (c != delimiter) {
+					if (rw->size() > 0) {
+						data.emplace_back(row());
+						data[cur_col] = std::move(*rw);
+						cur_col++;
+						delete rw;
+						rw = new row(rows_count);
+					}
+				}
+			}
+		}
+	}
+	delete rw;
+	data.pop_back();
+}
+
+
+// This loads data from file to rd
+void CsvWorker::loadFile(std::string filename, std::deque<std::string> &readed_data)
+{
+	// File to read
+	FILE *fin;
+	char buffer[BLOCK_SIZE];
+	int ok = fopen_s(&fin, filename.c_str(), "rb");
+	if (!ok) {
+		// The end of the file
+		_fseeki64(fin, 0, SEEK_END);
+		// Get size of the file
+		long long m_file_size = _ftelli64(fin);
+		// Go to start
+		_fseeki64(fin, 0, SEEK_SET);
+		// Read and write by "BLOCK_SIZE" bytes
+		int blocks_count = m_file_size / BLOCK_SIZE;
+		for (size_t i = 0; i <= blocks_count; ++i) {
+			int readed = fread(buffer, sizeof(unsigned char), BLOCK_SIZE, fin);
+			readed_data.push_back(std::string((char*)buffer, readed));
+		}
+		fclose(fin);
+	}
+	else
+	{
+		cout << "Can't open file \"" << filename << '\"' << endl;
+		throw;
+	}
+}
+
 
 // This saves in .csv file vector of rows "this->data".
 // This vector must be already filled.
-// The delimiter is always ",".
 void CsvWorker::saveToFile(std::string filename)
 {
     if(this->cols_count == 0) // if count of columns equals 0, generate error
@@ -97,7 +127,7 @@ void CsvWorker::saveToFile(std::string filename)
         {
             out << rw[j];
             if(j < delimiters_count)
-                out << ",";
+                out << delimiter;
         }
         // if row is not last, write endline
         if(i < this->rows_count - 1)

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <deque>
 
 using namespace std;
 
@@ -14,7 +15,7 @@ class CsvWorker
 public:
     // If counts of rows and columns !=0, this fills vector of rows "data";
     // each of rows has cols_count empty strings
-    CsvWorker(unsigned int rows_n=0, unsigned int cols_n=0);
+    CsvWorker(char delim=',', unsigned int rows_n=0, unsigned int cols_n=0);
 
     // This loads .csv file and fills vector of rows "data";
     // counts of rows and columns determines from file data.
@@ -41,11 +42,22 @@ private:
     // This gets reference to row ( typedef std::vector<std::string> row; )
     // in data ( std::vector<row> data; ) with row index row_n.
     row & getRowRef(unsigned int row_n);
+	// This loads data from file to readed_data
+	void loadFile(std::string filename, std::deque<std::string> &readed_data);
+	// This parse readed_data to data
+	void parseData(std::deque<std::string> &readed_data);
 
 private:
-    unsigned int rows_count;
-    unsigned int cols_count;
-    std::vector<row> data;
+	unsigned int rows_count{0};
+	unsigned int cols_count{0};
+    std::deque<row> data;
+	char delimiter{','};
+
+	static const int max_field_size{ 1024 };
+	static const int BLOCK_SIZE{ 2048 };
+
+	char unparsed_buffer[BLOCK_SIZE];
+	int unparsed_buffer_size{ 0 };
 };
 
 #endif // CSVWORKER_H
