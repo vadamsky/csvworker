@@ -63,6 +63,9 @@ void CsvWorker::parseData(std::deque<std::string> &readed_data)
 	}
 	delete rw;
 	data.pop_back();
+	rows_count = data.size();
+	if(rows_count>0)
+		cols_count = data[0].size();
 }
 
 

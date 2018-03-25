@@ -38,6 +38,9 @@ public:
     // This gets reference to row's field ( typedef std::vector<std::string> row; )
     // with row index row_n and field(column) index col_n.
     std::string & getFieldRef(unsigned int row_n, unsigned int col_n);
+	// This gets row ( typedef std::vector<std::string> row; )
+	// in data ( std::vector<row> data; ) with row index row_n.
+	row getRow(unsigned int row_n) { return getRowRef(row_n); }
 private:
     // This gets reference to row ( typedef std::vector<std::string> row; )
     // in data ( std::vector<row> data; ) with row index row_n.
